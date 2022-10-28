@@ -23,7 +23,9 @@ import scala.collection.JavaConverters._
 import io.delta.standalone.Constraint
 import io.delta.standalone.actions.Metadata
 
-// todo: docs
+/**
+ * Scala implementation of Java interface [[Constraint]].
+ */
 private[internal] case class ConstraintImpl(name: String, expression: String) extends Constraint {
 
   override def getName: String = name
@@ -36,19 +38,38 @@ private[internal] case class ConstraintImpl(name: String, expression: String) ex
 
 private[standalone] object ConstraintImpl {
 
-  // todo: doc (and all below)
+  def apply(name: String, expression: String): Constraint = {
+    new ConstraintImpl(name, expression)
+  }
+
+  /**
+   * Extracts constraints from the table properties. These include both CHECK constraints stored in
+   * the [[Metadata#getConfiguration( )]] and column invariants stored in the
+   * [[StructField#getMetadata( )]].
+   */
+  def getConstraints(metadata: Metadata): java.util.List[Constraint] = {
+    // todo: get column invariants
+
+    // get check constraints
+    getCheckConstraints(metadata.getConfiguration.asScala.toMap).asJava
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Check constraint methods
+  ///////////////////////////////////////////////////////////////////////////
+
+  /**
+   * The key-prefix for the check constraint key "delta.constraints.{constraintName}" in
+   * [[Metadata#getConfiguration( )]]
+   */
   val CHECK_CONSTRAINT_KEY_PREFIX = "delta.constraints.";
 
   def getCheckConstraintKey(name: String): String = {
     CHECK_CONSTRAINT_KEY_PREFIX + name.toLowerCase(Locale.ROOT)
   }
 
-  def apply(name: String, expression: String): Constraint = {
-    new ConstraintImpl(name, expression)
-  }
-
-  private[internal] def getCheckConstraints(
-      configuration: Map[String, String]): Seq[Constraint] = {
+  private[internal] def getCheckConstraints(configuration: Map[String, String])
+      : Seq[Constraint] = {
 
     val prefixRegex = CHECK_CONSTRAINT_KEY_PREFIX.replace(".", "\\.")
     configuration
@@ -57,12 +78,4 @@ private[standalone] object ConstraintImpl {
         ConstraintImpl(key.replaceFirst(prefixRegex, ""), value)
       }.toSeq
   }
-
-  def getConstraints(metadata: Metadata): java.util.List[Constraint] = {
-    // todo: get column invariants
-
-    // get check constraints
-    getCheckConstraints(metadata.getConfiguration.asScala.toMap).asJava
-  }
-
 }

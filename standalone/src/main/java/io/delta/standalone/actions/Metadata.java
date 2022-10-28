@@ -44,12 +44,6 @@ import io.delta.standalone.internal.exception.DeltaErrors;
  */
 public final class Metadata implements Action {
 
-    // todo: is this where we want to put it?
-    /**
-     * This is the key-prefix for the check constraint key "delta.constraints.{constraintName}" in
-     * {@link Metadata#getConfiguration()}
-     */
-    public static final String CHECK_CONSTRAINT_KEY_PREFIX = "delta.constraints.";
     @Nonnull private final String id;
     @Nullable private final String name;
     @Nullable private final String description;

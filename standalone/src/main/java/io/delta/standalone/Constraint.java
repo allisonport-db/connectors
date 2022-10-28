@@ -28,6 +28,7 @@ import io.delta.standalone.types.StructField;
  *   TODO: provide more details here
  */
 public interface Constraint {
+
     /**
      * @return the name of this constraint
      */
