@@ -16,11 +16,7 @@
 
 package io.delta.standalone.actions;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -60,8 +56,8 @@ public final class Metadata implements Action {
         this.name = name;
         this.description = description;
         this.format = format;
-        this.partitionColumns = partitionColumns;
-        this.configuration = configuration;
+        this.partitionColumns = Collections.unmodifiableList(partitionColumns);
+        this.configuration = Collections.unmodifiableMap(configuration);
         this.createdTime = createdTime;
         this.schema = schema;
     }
@@ -104,7 +100,7 @@ public final class Metadata implements Action {
      */
     @Nonnull
     public List<String> getPartitionColumns() {
-        return Collections.unmodifiableList(partitionColumns);
+        return partitionColumns;
     }
 
     /**
@@ -113,7 +109,7 @@ public final class Metadata implements Action {
      */
     @Nonnull
     public Map<String, String> getConfiguration() {
-        return Collections.unmodifiableMap(configuration);
+        return configuration;
     }
 
     /**
@@ -159,7 +155,9 @@ public final class Metadata implements Action {
      *         {@link Metadata} instance
      */
     public Builder copyBuilder() {
-        return new Builder(id, name, description, format, partitionColumns, configuration,
+        return new Builder(id, name, description, format,
+                new ArrayList(partitionColumns), // mutable
+                new HashMap(configuration), // mutable; shallow clone of Map<String, String> is safe
                 createdTime, schema);
     }
 
