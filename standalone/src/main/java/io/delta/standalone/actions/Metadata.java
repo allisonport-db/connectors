@@ -19,11 +19,9 @@ package io.delta.standalone.actions;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,6 +29,7 @@ import javax.annotation.Nullable;
 import io.delta.standalone.Constraint;
 import io.delta.standalone.types.StructType;
 
+import io.delta.standalone.internal.ConstraintImpl;
 import io.delta.standalone.internal.exception.DeltaErrors;
 
 /**
@@ -44,6 +43,13 @@ import io.delta.standalone.internal.exception.DeltaErrors;
  * @see  <a href="https://github.com/delta-io/delta/blob/master/PROTOCOL.md#change-metadata">Delta Transaction Log Protocol: Change Metadata</a>
  */
 public final class Metadata implements Action {
+
+    // todo: is this where we want to put it?
+    /**
+     * This is the key-prefix for the check constraint key "delta.constraints.{constraintName}" in
+     * {@link Metadata#getConfiguration()}
+     */
+    public static final String CHECK_CONSTRAINT_KEY_PREFIX = "delta.constraints.";
     @Nonnull private final String id;
     @Nullable private final String name;
     @Nullable private final String description;
@@ -143,18 +149,7 @@ public final class Metadata implements Action {
      * @return the CHECK constraints and column invariants defined in this metadata
      */
     public List<Constraint> getConstraints() {
-        // todo: get column invariants
-
-        // get check constraints
-        final String prefixRegex = "^" + Constraint.CHECK_CONSTRAINT_KEY_PREFIX.replace(".", "\\.");
-        List<Constraint> checkConstraints = configuration.entrySet().stream()
-                .filter(entry -> entry.getKey().startsWith(Constraint.CHECK_CONSTRAINT_KEY_PREFIX))
-                .map(entry -> new Constraint(
-                                entry.getKey().replaceFirst(prefixRegex, ""),
-                                entry.getValue()))
-                .collect(Collectors.toList());
-
-        return checkConstraints;
+        return Collections.unmodifiableList(ConstraintImpl.getConstraints(this));
     }
 
     /**
@@ -171,7 +166,7 @@ public final class Metadata implements Action {
      * @throws IllegalArgumentException if a constraint with name already exists
      */
     public Metadata addCheckConstraint(String name, String expression) throws Throwable {
-        String fullKey = Constraint.CHECK_CONSTRAINT_KEY_PREFIX + name.toLowerCase(Locale.ROOT);
+        String fullKey = ConstraintImpl.getCheckConstraintKey(name);
         if (configuration.containsKey(fullKey)) {
             // todo: decide if we want to throw an error here
             throw DeltaErrors.checkConstraintAlreadyExists(name, configuration.get(fullKey));
@@ -192,8 +187,7 @@ public final class Metadata implements Action {
      * @throws IllegalArgumentException if a constraint with name does not exist
      */
     public Metadata removeCheckConstraint(String name) throws Throwable {
-        final String fullKey = Constraint.CHECK_CONSTRAINT_KEY_PREFIX +
-                name.toLowerCase(Locale.ROOT);
+        final String fullKey = ConstraintImpl.getCheckConstraintKey(name);
         if (!configuration.containsKey(fullKey)) {
             // todo: decide if we want to throw an error here
             throw DeltaErrors.checkConstraintDoesNotExist(name);
