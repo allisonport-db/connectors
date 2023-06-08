@@ -17,6 +17,7 @@ import java.util.function.Function;
 /**
  * Expose the {@link Metadata}  as a {@link Row}.
  */
+// TODO: should ScanStateRow be a pojo and make this extend PojoRow?
 public class ScanStateRow implements Row
 {
     private static final Map<Integer, Function<ScanStateRow, Object>>

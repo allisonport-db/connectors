@@ -21,6 +21,7 @@ import java.io.File
 import org.apache.spark.SparkConf
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.sql.QueryTest
+import org.apache.spark.sql.delta.sources.DeltaSQLConf
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.test.SharedSparkSession
 
@@ -81,6 +82,19 @@ class GoldenTablesGenerator extends QueryTest with SharedSparkSession {
         .format("delta")
         .partitionBy("part_a", "part_b")
         .mode("append").save(path)
+    }
+  }
+
+  generate("basic-dv-no-checkpoint") { path =>
+    withSQLConf(("spark.databricks.delta.properties.defaults.enableDeletionVectors", "true")) {
+      spark.range(10)
+        .write
+        .format("delta")
+        .save(path)
+      spark.sql(
+        s"""
+          |DELETE FROM delta.`$path` WHERE id < 2
+          |""".stripMargin)
     }
   }
 

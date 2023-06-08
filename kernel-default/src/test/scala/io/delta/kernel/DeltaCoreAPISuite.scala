@@ -12,11 +12,11 @@ import io.delta.kernel.data.{ColumnarBatch, ColumnVector, JsonRow, Row}
 import io.delta.kernel.expressions.{Expression, Literal}
 import io.delta.kernel.types.{ArrayType, BooleanType, IntegerType, LongType, MapType, StringType, StructType}
 import io.delta.kernel.util.GoldenTableUtils
-import io.delta.kernel.utils.Utils
+import io.delta.kernel.utils.{CloseableIterator, Utils}
 import org.apache.hadoop.conf.Configuration
 import org.scalatest.funsuite.AnyFunSuite
 
-class DeltaCoreAPISuite extends AnyFunSuite with GoldenTableUtils {
+class DeltaCoreAPISuite extends AnyFunSuite with GoldenTableUtils with DeltaKernelTestUtils {
   test("end-to-end usage: reading a table") {
     withGoldenTable("delta-table") { path =>
       val tableClient = DefaultTableClient.create(new Configuration())
@@ -112,6 +112,33 @@ class DeltaCoreAPISuite extends AnyFunSuite with GoldenTableUtils {
         })
       }
       assert(actualValueColumnValues.toSet === Seq.range(start = 0, end = 150).toSet)
+    }
+  }
+
+  test("reads DeletionVectorDescriptor from json files") {
+    withGoldenTable("basic-dv-no-checkpoint") { path =>
+
+      val readSchema = new StructType().add("id", LongType.INSTANCE)
+
+      val tableClient = DefaultTableClient.create(new Configuration())
+      val table = Table.forPath(path)
+      val snapshot = table.getLatestSnapshot(tableClient)
+      val scan = snapshot.getScanBuilder(tableClient)
+        .withReadSchema(tableClient, readSchema)
+        .build()
+
+      val scanFilesIter = scan.getScanFiles(tableClient)
+      val rows = getRows(scanFilesIter)
+      val dvs = rows.filter(!_.isNullAt(5)).map(_.getRecord(5))
+
+      // there should be 1 deletion vector
+      assert(dvs.length == 1)
+
+      val dv = dvs.head
+      // storageType should be 'u'
+      assert(dv.getString(0) == "u")
+      // cardinality should be 2
+      assert(dv.getLong(4) == 2)
     }
   }
 

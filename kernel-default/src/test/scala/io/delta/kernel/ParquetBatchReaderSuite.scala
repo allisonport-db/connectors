@@ -3,37 +3,12 @@ package io.delta.kernel
 import java.io.File
 
 import io.delta.kernel.client.ParquetBatchReader
-import io.delta.kernel.data.Row
 import io.delta.kernel.types.{LongType, StructField, StructType}
 import io.delta.kernel.util.GoldenTableUtils
 import org.apache.hadoop.conf.Configuration
 import org.scalatest.funsuite.AnyFunSuite
 
-class ParquetBatchReaderSuite extends AnyFunSuite with GoldenTableUtils {
-
-  private def getRowsFromFile(
-    reader: ParquetBatchReader,
-    fileName: String,
-    schema: StructType): Seq[Row] = {
-    var result = Seq.empty[Row]
-    val iter = reader.read(fileName, schema)
-    try {
-      while (iter.hasNext) {
-        val batch = iter.next()
-        val rowIter = batch.getRows
-        try {
-          while (rowIter.hasNext) {
-            result = result :+ rowIter.next
-          }
-        } finally {
-          rowIter.close()
-        }
-      }
-    } finally {
-      iter.close()
-    }
-    result
-  }
+class ParquetBatchReaderSuite extends AnyFunSuite with GoldenTableUtils with DeltaKernelTestUtils {
 
   test("don't request row-indexes") {
     withGoldenTable("parquet-basic-row-indexes") { path =>
@@ -48,10 +23,11 @@ class ParquetBatchReaderSuite extends AnyFunSuite with GoldenTableUtils {
       val parquetBatchReader = new ParquetBatchReader(new Configuration())
 
       // there should be three files [0, 10), [10, 20), [20, 30)
-      parquetFiles.map { file =>
-        val rows = getRowsFromFile(parquetBatchReader, file.getAbsolutePath, readSchema)
+      parquetFiles.flatMap { file =>
+        val iter = parquetBatchReader.read(file.getAbsolutePath, readSchema)
+        val rows = getRows(iter)
         rows.map(_.getLong(0))
-      }.flatten.toSet == Set(Range(0, 30))
+      }.toSet == Set(Range(0, 30))
     }
   }
 
@@ -69,7 +45,8 @@ class ParquetBatchReaderSuite extends AnyFunSuite with GoldenTableUtils {
       val parquetBatchReader = new ParquetBatchReader(new Configuration())
 
       parquetFiles.foreach { file =>
-        val rows = getRowsFromFile(parquetBatchReader, file.getAbsolutePath, readSchema)
+        val iter = parquetBatchReader.read(file.getAbsolutePath, readSchema)
+        val rows = getRows(iter)
         // row index should = id % 10
         rows.foreach { row =>
           assert(row.getLong(0) % 10 == row.getLong(1))

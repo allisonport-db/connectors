@@ -820,11 +820,11 @@ lazy val kernelDefault = (project in file("kernel-default"))
       "org.apache.parquet" % "parquet-hadoop" % "1.12.3",
 
       "org.scalatest" %% "scalatest" % "3.2.15" % "test",
-      "io.delta" %% "delta-core" % "2.2.0" % "test",
-      "org.apache.spark" %% "spark-sql" % "3.3.2" % "test", // SparkSession
-      "org.apache.spark" %% "spark-sql" % "3.3.2" % "test" classifier "tests",
-      "org.apache.spark" %% "spark-core" % "3.3.2" % "test" classifier "tests",
-      "org.apache.spark" %% "spark-catalyst" % "3.3.2" % "test" classifier "tests",
+      "io.delta" %% "delta-core" % "2.4.0" % "test",
+      "org.apache.spark" %% "spark-sql" % "3.4.0" % "test", // SparkSession
+      "org.apache.spark" %% "spark-sql" % "3.4.0" % "test" classifier "tests",
+      "org.apache.spark" %% "spark-core" % "3.4.0" % "test" classifier "tests",
+      "org.apache.spark" %% "spark-catalyst" % "3.4.0" % "test" classifier "tests",
       "junit" % "junit" % "4.11" % "test",
       "com.novocode" % "junit-interface" % "0.11" % "test",
     )
