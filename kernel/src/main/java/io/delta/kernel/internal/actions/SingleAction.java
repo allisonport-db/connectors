@@ -56,6 +56,7 @@ public class SingleAction {
         .add("metaData", Metadata.READ_SCHEMA)
         .add("protocol", Protocol.READ_SCHEMA)
         // TODO: current Parquet reader doesn't handle missing columns in the files
+        // TODO: ^^ is a problem for checkpoints without DVs!!!
         // .add("cdc", AddCDCFile.READ_SCHEMA)
         .add("commitInfo", CommitInfo.READ_SCHEMA);
 

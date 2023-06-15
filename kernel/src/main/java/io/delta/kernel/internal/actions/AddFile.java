@@ -49,24 +49,6 @@ public class AddFile extends FileAction {
     private final Map<String, String> partitionValues;
     private final long size;
     private final long modificationTime;
-    private final DeletionVectorDescriptor deletionVector;
-
-    public AddFile(
-            String path,
-            Map<String, String> partitionValues,
-            long size,
-            long modificationTime,
-            boolean dataChange) {
-        super(path, dataChange);
-
-        if (partitionValues == null) {
-            partitionValues = Collections.emptyMap();
-        }
-        this.partitionValues = partitionValues;
-        this.size = size;
-        this.modificationTime = modificationTime;
-        this.deletionVector = null;
-    }
 
     public AddFile(
             String path,
@@ -75,7 +57,7 @@ public class AddFile extends FileAction {
             long modificationTime,
             boolean dataChange,
             DeletionVectorDescriptor deletionVector) {
-        super(path, dataChange);
+        super(path, dataChange, deletionVector);
 
         if (partitionValues == null) {
             partitionValues = Collections.emptyMap();
@@ -83,7 +65,6 @@ public class AddFile extends FileAction {
         this.partitionValues = partitionValues;
         this.size = size;
         this.modificationTime = modificationTime;
-        this.deletionVector = deletionVector;
     }
 
     @Override
@@ -109,23 +90,6 @@ public class AddFile extends FileAction {
 
     public Map<String, String> getPartitionValues() {
         return Collections.unmodifiableMap(partitionValues);
-    }
-
-    public Optional<String> getDeletionVectorUniqueId() {
-        // TODO: IMPLEMENT THIS
-        return Optional.empty();
-    }
-
-    public DeletionVectorDescriptor getDeletionVector() {
-        return deletionVector;
-    }
-
-    public Row getDeletionVectorAsRow() {
-        if (deletionVector == null) {
-            return null;
-        } else {
-            return deletionVector.asRow();
-        }
     }
 
     public long getSize() {

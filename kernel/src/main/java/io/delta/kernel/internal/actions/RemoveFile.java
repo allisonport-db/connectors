@@ -21,14 +21,16 @@ public class RemoveFile extends FileAction {
         final Map<String, String> partitionValues = row.getMap(2);
         final long size = row.getLong(3);
         final boolean dataChange = row.getBoolean(4);
+        final DeletionVectorDescriptor deletionVector =
+                DeletionVectorDescriptor.fromRow(row.getRecord(5));
 
         return new RemoveFile(
                 path,
                 deletionTimestamp,
                 partitionValues,
                 size,
-                dataChange
-        );
+                dataChange,
+                deletionVector);
     }
 
     public static final StructType READ_SCHEMA = new StructType()
@@ -36,7 +38,8 @@ public class RemoveFile extends FileAction {
             .add("deletionTimestamp", LongType.INSTANCE)
             .add("partitionValues", new MapType(StringType.INSTANCE, StringType.INSTANCE, false))
             .add("size", LongType.INSTANCE)
-            .add("dataChange", BooleanType.INSTANCE);
+            .add("dataChange", BooleanType.INSTANCE)
+            .add("deletionVector", DeletionVectorDescriptor.READ_SCHEMA);
 
     private final long deletionTimestamp;
     private final Map<String, String> partitionValues;
@@ -47,16 +50,13 @@ public class RemoveFile extends FileAction {
             long deletionTimestamp,
             Map<String, String> partitionValues,
             long size,
-            boolean dataChange) {
-        super(path, dataChange);
+            boolean dataChange,
+            DeletionVectorDescriptor deletionVector) {
+        super(path, dataChange, deletionVector);
 
         this.deletionTimestamp = deletionTimestamp;
         this.partitionValues = partitionValues;
         this.size = size;
-    }
-
-    public Optional<String> getDeletionVectorUniqueId() {
-        return null;
     }
 
     @Override
@@ -66,7 +66,8 @@ public class RemoveFile extends FileAction {
                  this.deletionTimestamp,
                  this.partitionValues,
                  this.size,
-                 dataChange
+                 dataChange,
+                 this.deletionVector
          );
     }
 
@@ -81,7 +82,8 @@ public class RemoveFile extends FileAction {
                 this.deletionTimestamp,
                 this.partitionValues,
                 this.size,
-                this.dataChange
+                this.dataChange,
+                this.deletionVector
         );
     }
 }
