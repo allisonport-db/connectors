@@ -803,7 +803,8 @@ lazy val kernel = (project in file("kernel"))
     commonSettings,
     skipReleaseSettings,
     libraryDependencies ++= Seq(
-
+      // TODO: what to do about this dependency?
+      "org.roaringbitmap" % "RoaringBitmap" % "0.9.25"
     )
   )
 
@@ -827,5 +828,6 @@ lazy val kernelDefault = (project in file("kernel-default"))
       "org.apache.spark" %% "spark-catalyst" % "3.4.0" % "test" classifier "tests",
       "junit" % "junit" % "4.11" % "test",
       "com.novocode" % "junit-interface" % "0.11" % "test",
-    )
+    ),
+    Test / testOptions += Tests.Argument("-oDF")
   )
