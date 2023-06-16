@@ -1,7 +1,5 @@
 package io.delta.kernel.internal.deletionvectors;
 
-import io.delta.kernel.internal.data.SelectionColumnVector;
-import io.delta.kernel.utils.Tuple2;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.IOException;
@@ -9,9 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import io.delta.kernel.data.ColumnVector;
-
-// TODO: add test suite
+// TODO: add test suite (to copy over test suite we need to impl. more methods (i.e. serialize)
 /**
  * A 64-bit extension of [[RoaringBitmap]] that is optimized for cases that usually fit within
  * a 32-bit bitmap, but may run over by a few bits on occasion.
@@ -116,10 +112,10 @@ final public class RoaringBitmapArray {
      * Checks whether the value is included,
      * which is equivalent to checking if the corresponding bit is set.
      */
-    boolean contains(long value) {
+    public boolean contains(long value) {
         if (value < 0 || value > MAX_REPRESENTABLE_VALUE)  {
             throw new IllegalArgumentException(
-                    "Requirement violated: value < 0 || value > MAX_REPRESENTABLE_VALUE ")
+                    "Requirement violated: value < 0 || value > MAX_REPRESENTABLE_VALUE ");
         }
         int high = highBytes(value);
         if (high >= bitmaps.length) {

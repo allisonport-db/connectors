@@ -115,6 +115,46 @@ class DeltaCoreAPISuite extends AnyFunSuite with GoldenTableUtils with DeltaKern
     }
   }
 
+  test("end-to-end usage: reading a table with dv") {
+    withGoldenTable("basic-dv-no-checkpoint") { path =>
+      val tableClient = DefaultTableClient.create(new Configuration())
+      val table = Table.forPath(path)
+      val snapshot = table.getLatestSnapshot(tableClient)
+
+      // Go through the tableSchema and select the columns interested in reading
+      val readSchema = new StructType().add("id", LongType.INSTANCE)
+      val filter = Literal.TRUE
+
+      val scanObject = scan(tableClient, snapshot, readSchema, filter)
+
+      val fileIter = scanObject.getScanFiles(tableClient)
+      val scanState = scanObject.getScanState(tableClient);
+
+      val actualValueColumnValues = ArrayBuffer[Long]()
+      while(fileIter.hasNext) {
+        val fileColumnarBatch = fileIter.next()
+          val dataBatches = Scan.readData(
+            tableClient,
+            scanState,
+            fileColumnarBatch.getRows(),
+            Optional.empty()
+          )
+
+          while (dataBatches.hasNext) {
+            val batch = dataBatches.next()
+            val selectionVector = batch.getSelectionVector()
+            val valueColVector = batch.getData.getColumnVector(0)
+            (0 to valueColVector.getSize()-1).foreach { i =>
+              if (!selectionVector.isPresent || selectionVector.get.getBoolean(i)) {
+                actualValueColumnValues.append(valueColVector.getLong(i))
+              }
+            }
+          }
+      }
+      assert(actualValueColumnValues.toSet === Seq.range(start = 2, end = 10).toSet)
+    }
+  }
+
   test("reads DeletionVectorDescriptor from json files") {
     withGoldenTable("basic-dv-no-checkpoint") { path =>
 
@@ -141,6 +181,8 @@ class DeltaCoreAPISuite extends AnyFunSuite with GoldenTableUtils with DeltaKern
       assert(dv.getLong(4) == 2)
     }
   }
+
+  // TODO: test that log replay with DV works correctly. More DV tests.
 
   private def convertColumnarBatchRowToJSON(columnarBatch: ColumnarBatch, rowIndex: Int): String = {
     val rowObject = new java.util.HashMap[String, Object]()

@@ -10,10 +10,10 @@ import io.delta.kernel.data.FileDataReadResult;
 import io.delta.kernel.data.Row;
 import io.delta.kernel.expressions.Expression;
 import io.delta.kernel.expressions.Literal;
-import io.delta.kernel.fs.FileStatus;
+import io.delta.kernel.internal.deletionvectors.DeletionVectorUtils;
+import io.delta.kernel.types.StructField;
 import io.delta.kernel.types.StructType;
 import io.delta.kernel.utils.CloseableIterator;
-import io.delta.kernel.utils.Tuple2;
 import io.delta.kernel.utils.Utils;
 
 import java.io.IOException;
@@ -74,24 +74,19 @@ public interface Scan {
             CloseableIterator<Row> scanFileRowIter,
             Optional<Expression> filter) throws IOException {
 
-        StructType readSchema = Utils.getPhysicalSchema(scanState);
+        StructType readSchema = Utils.getPhysicalSchema(scanState)
+                .add(StructField.ROW_INDEX_COLUMN); // request the row_index column for DV filtering
 
         ParquetHandler parquetHandler = tableClient.getParquetHandler();
 
         CloseableIterator<FileReadContext> filesReadContextsIter =
                 parquetHandler.contextualizeFileReads(
                         scanFileRowIter,
-                        Literal.TRUE);
+                        filter.orElse(Literal.TRUE));
 
         CloseableIterator<FileDataReadResult> data =
                 parquetHandler.readParquetFiles(filesReadContextsIter, readSchema);
 
-        // TODO: Attach the selection vector associated with the file
-        return data.map(fileDataReadResult ->
-                new DataReadResult(
-                        fileDataReadResult.getData(),
-                        Optional.empty()
-                )
-        );
+        return DeletionVectorUtils.attachSelectionVectors(tableClient, scanState, data);
     }
 }

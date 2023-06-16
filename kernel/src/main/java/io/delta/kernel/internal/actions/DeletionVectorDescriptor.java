@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -189,6 +190,18 @@ public class DeletionVectorDescriptor {
                 "DeletionVectorDescriptor(storageType=%s, pathOrInlineDv=%s, offset=%s, " +
                 "sizeInBytes=%s, cardinality=%s)",
                 storageType, pathOrInlineDv, offset, sizeInBytes, cardinality);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (!(o instanceof DeletionVectorDescriptor)) return false;
+        DeletionVectorDescriptor dv = (DeletionVectorDescriptor) o;
+        return Objects.equals(storageType, dv.storageType) &&
+                Objects.equals(pathOrInlineDv, dv.pathOrInlineDv) &&
+                this.offset == dv.offset &&
+                this.sizeInBytes == dv.sizeInBytes &&
+                this.cardinality == dv.cardinality;
     }
 
     // TODO: this seems round-about and WEIRD; decide between the two below approaches
