@@ -46,7 +46,9 @@ public class DefaultParquetHandler
             @Override
             public FileReadContext next()
             {
-                return () -> fileIter.next();
+                // using unit means we call next() on an interator over and over
+                Row row = fileIter.next();
+                return () -> row;
             }
         };
     }

@@ -106,13 +106,15 @@ public class Utils
         return FileStatus.of(path, size, 0);
     }
 
+    // TODO using AddFiles here is confusing? can we separate the concepts?
     public static Row getScanFileRow(FileStatus fileStatus) {
         AddFile addFile = new AddFile(
                 fileStatus.getPath(),
                 Collections.emptyMap(),
                 fileStatus.getSize(),
                 fileStatus.getModificationTime(),
-                false /* dataChange */
+                false /* dataChange */,
+                null // deletionVector
         );
 
         return new AddFileColumnarBatch(Collections.singletonList(addFile))
